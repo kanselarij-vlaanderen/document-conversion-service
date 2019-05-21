@@ -1,6 +1,7 @@
 var cheerio = require('cheerio');
 var _ = require('lodash');
 
+// From https://github.com/cheeriojs/cheerio/issues/748#issue-105213182
 module.exports = (function() {
     var extendCheerio = function extendCheerio($) {
         _.extend($.prototype, {

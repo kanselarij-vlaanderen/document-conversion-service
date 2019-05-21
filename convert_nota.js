@@ -5,7 +5,7 @@ import { uuid } from 'mu';
 const mammoth = require('mammoth');
 
 const cheerio = require('cheerio');
-require('./cheerio_matchall_polyfill')(cheerio); // Polyfill
+require('./cheerio_wrapall_polyfill')(cheerio); // Polyfill
 const _ = require('lodash');
 
 const regexEnrichers = require('./regex_enrichers');
