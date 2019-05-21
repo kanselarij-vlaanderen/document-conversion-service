@@ -1,0 +1,12 @@
+(?:([Dd]e [hH]eer|[mM]evrouw) )((?:(?:[aA]f|[aA]an|[bB]ij|[dD]e|[dD]en|[dD]er|[dD]'|[hH]et|'[tT]|[iI]n|[oO]nder|[oO]p|[oO]ver|'[sS]|'[tT]|[tT]e|[tT]en|[tT]er|[tT]ot|[uU]it|[uU]ijt|[vV]an|[vV]anden|[vV]er|[vV]oor)(?: ?)){0,2})((?:(?:[A-Z][A-Za-z\u00C0-\u024F\u1E00-\u1EFF\-]*)(?: ?))+)
+
+Match 1
+Full match	0-22	De heer Guido De Boeck
+Group 1.	n/a	De heer
+Group 2.	n/a	
+Group 3.	n/a	Guido De Boeck
+Match 2
+Full match	23-39	De heer De Boeck
+Group 1.	n/a	De heer
+Group 2.	n/a	De 
+Group 3.	n/a	Boeck
