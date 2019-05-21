@@ -32,12 +32,11 @@ async function persistFile (fileProperties, buffer, shareFolderSubPath = '') {
     // const hash = crypto.createHash('md5');
     // hash.update(buffer)
     // let digest = hash.digest('hex');
-    const uuid = fileProperties.uuid || uuid();
+    const virtualUuid = fileProperties.uuid || uuid();
     const created = fileProperties.created || Date.now();
     const extension = fileProperties.extension || mime.extension(fileProperties.type) || 'bin';
-    const filePath = path.join(shareFolderSubPath, `${fileProperties.name}.${fileProperties.extension}`);
-    const physicalUri = 'share://' + filePath;
-    const physicalPath = path.join(config.SHARE_FOLDER_PATH, filePath);
+    const physicalUuid = fileProperties.physicalUuid || uuid();
+    const physicalPath = path.join(config.SHARE_FOLDER_PATH, shareFolderSubPath, physicalUuid);
     const size = fileProperties.size || buffer.length;
 
     let fileWrite = fsp.writeFile(physicalPath, buffer);
@@ -45,14 +44,15 @@ async function persistFile (fileProperties, buffer, shareFolderSubPath = '') {
     let fileInsertion = fileWrite.then(() => {
       console.log(`Wrote ${physicalPath} to disk, inserting metadata ...`);
       let newFileProperties = {
-        name: fileProperties.extension,
-        uuid: uuid,
+        name: fileProperties.name,
+        uuid: virtualUuid,
+        physicalUuid: physicalUuid,
         type: fileProperties.type,
         extension: extension,
         size: size,
         created: created
       };
-      return queries.createFileDataObject(newFileProperties, physicalUri);
+      return queries.createFileDataObject(newFileProperties, shareFolderSubPath);
     }, (res) => {
       cleanUpFile(physicalPath);
       reject(res);

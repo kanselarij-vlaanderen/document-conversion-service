@@ -3,12 +3,16 @@
 import { querySudo as query, updateSudo as update } from '@lblod/mu-auth-sudo';
 import { uuid, sparqlEscapeUri, sparqlEscapeString, sparqlEscapeInt, sparqlEscapeDateTime } from 'mu';
 
+const path = require('path');
+
 const config = require('./config');
 
-const createFileDataObject = async function (fileProperties, fileAddressUri) {
+const createFileDataObject = async function (fileProperties, shareFolderSubPath) {
   const virtualUuid = fileProperties.uuid || uuid();
-  const physicalUuid = uuid();
-  let fileObjectUri = config.FILE_RESOURCES_PATH + virtualUuid; // We assume trailing slash
+  const physicalUuid = fileProperties.physicalUuid || uuid();
+  const fileObjectUri = config.FILE_RESOURCES_PATH + virtualUuid; // We assume trailing slash
+  const filePath = path.join(shareFolderSubPath, physicalUuid);
+  const physicalUri = 'share://' + filePath;
 
   let q = `
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -16,10 +20,11 @@ const createFileDataObject = async function (fileProperties, fileAddressUri) {
     PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
     PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-
-    INSERT {
+    PREFIX dbpedia: <http://dbpedia.org/ontology/>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    
+    INSERT DATA {
       GRAPH <http://mu.semte.ch/graphs/public> {
-        # Virtual file resource
         ${sparqlEscapeUri(fileObjectUri)} a nfo:FileDataObject;
           mu:uuid ${sparqlEscapeString(virtualUuid)};
           nfo:fileName ${sparqlEscapeString(fileProperties.name)};
@@ -27,8 +32,7 @@ const createFileDataObject = async function (fileProperties, fileAddressUri) {
           nfo:fileSize ${sparqlEscapeInt(fileProperties.size)};
           dbpedia:fileExtension ${sparqlEscapeString(fileProperties.extension)};
           nfo:fileCreated ${sparqlEscapeDateTime(fileProperties.created)}.
-        # Physical file resource
-        ${sparqlEscapeUri(fileAddressUri)} a nfo:FileDataObject;
+        ${sparqlEscapeUri(physicalUri)} a nfo:FileDataObject;
           mu:uuid  ${sparqlEscapeString(physicalUuid)};
           nfo:fileName ${sparqlEscapeString(fileProperties.name)};
           dct:format ${sparqlEscapeString(fileProperties.type)};
@@ -36,8 +40,6 @@ const createFileDataObject = async function (fileProperties, fileAddressUri) {
           dbpedia:fileExtension ${sparqlEscapeString(fileProperties.extension)};
           nfo:fileCreated ${sparqlEscapeDateTime(fileProperties.created)};
           nie:dataSource ${sparqlEscapeUri(fileObjectUri)}.
-        #HACK for the sprintf issue
-        ${sparqlEscapeUri(fileObjectUri)} ?p ?o.
       }
     }
   `;
@@ -96,6 +98,7 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
       GRAPH ?g {
         ?documentVersion a ext:DocumentVersie;
           mu:uuid ${sparqlEscapeString(documentVersionUuid)};
+          ext:file ?file.
         ?document a foaf:Document;
           besluitvorming:heeftVersie ?documentVersion;
           ext:documentType ?documentType.

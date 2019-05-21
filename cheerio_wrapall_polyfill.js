@@ -1,3 +1,5 @@
+"use strict";
+
 var cheerio = require('cheerio');
 var _ = require('lodash');
 
@@ -29,7 +31,7 @@ module.exports = (function() {
     };
 
     if ("test") {
-        $ = cheerio.load("<html><body><div><p><span>This <em>is <i>test</p><span>More <em>test");
+        let $ = cheerio.load("<html><body><div><p><span>This <em>is <i>test</p><span>More <em>test");
         extendCheerio($);
         $('span').wrapAll('<section>');
         console.log($.html());

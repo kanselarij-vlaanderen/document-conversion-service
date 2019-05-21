@@ -1,9 +1,11 @@
 "use strict";
 
+const path = require('path');
+
 const matchAll = require('string.prototype.matchall');
 matchAll.shim(); // PolyFill
 
-const regexUtils = require('./regexUtils');
+const regexUtils = require('./regex_utils');
 
 const DOSSIERNUMMER_REGEX = /VR(?:\/|\s)(\d{4})(?:\/|\s)(\d{2})(\d{2})(?:\/|\s)(?:(DOC|DEC|MED|VAR)\.(\d{4})(?:\/)(\d))?/gmiu;
 
@@ -123,7 +125,7 @@ let alphaNumericDate = function (input) {
 
 
 
-const NAME_REGEX = regexUtils.loadRegexFromFile('./regex/name.regex', 'gmu');
+const NAME_REGEX = regexUtils.loadRegexFromFile(path.join(__dirname, './regex/name.regex'), 'gmu');
 
 let name = function (input) {
   let matches = input.matchAll(NAME_REGEX);
@@ -153,7 +155,7 @@ let name = function (input) {
 
 
 
-const MINISTER_TITLES_REGEX = regexUtils.loadRegexFromFile('./regex/flemish_minister_titles.regex', 'igmu');
+const MINISTER_TITLES_REGEX = regexUtils.loadRegexFromFile(path.join(__dirname, './regex/flemish_minister_titles.regex'), 'igmu');
 
 let flemishMinisterTitles = function (input) {
   let matches = input.matchAll(MINISTER_TITLES_REGEX);

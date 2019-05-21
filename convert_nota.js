@@ -171,7 +171,7 @@ let enrichNota = function (html) {
         console.log("FOUND SIGNATURE", signature.text());
       });
       let firstSignatureTitle = notaHtml.find('section:last-of-type .minister-title').parentsUntil(notaHtml.find('section:last-of-type').get(0)).last();
-      console.log("Fierst signature title", firstSignatureTitle);
+      console.log("First signature title", firstSignatureTitle);
       let footerElems = firstSignatureTitle.nextAll().addBack();
       // console.log("FOOTER ELEMS parent", signatures[0].parentsUntil('section'));
       // console.log("FOOTER ELEMS", footerElems);
