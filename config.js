@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-
+const MU_APPLICATION_GRAPH = process.env['MU_APPLICATION_GRAPH'] || 'http://mu.semte.ch/application';
 const FILE_RESOURCES_PATH = 'http://kanselarij.vo.data.gift/id/files/';
 const SHARE_FOLDER_PATH = '/share';
 const FILE_SHARE_SUBFOLDER = 'html_conversions';
@@ -29,6 +29,7 @@ if (!fs.existsSync(dir)) {
 }
 
 module.exports = {
+  MU_APPLICATION_GRAPH,
   FILE_RESOURCES_PATH,
   SHARE_FOLDER_PATH,
   IMG_PATH,

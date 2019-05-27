@@ -16,22 +16,6 @@ const htmlEnrichers = require('./html_enrichers');
 const config = require('./config');
 const persistFile = require('./persist_file');
 
-var imageConverter = mammoth.images.imgElement(function (image) {
-  return image.read().then(function (imageBuffer) {
-    let fileProperties = {
-      uuid: uuid(),
-      type: image.contentType
-    };
-    fileProperties.name = fileProperties.uuid;
-    const fileDownloadPath = `files/${fileProperties.uuid}/download`;
-    persistFile(fileProperties, imageBuffer, config.IMG_PATH).then(() => {
-      return {
-        src: fileDownloadPath
-      };
-    });
-  });
-});
-
 const MinisterTitleStarts = [
   "De Vlaamse minister van",
   "De minister-president van de Vlaamse Regering",
@@ -52,7 +36,6 @@ var isMinisterNaam = function (text) {
 };
 
 var options = {
-  convertImage: imageConverter,
   styleMap: [
     "b => b",
     "i => i",
@@ -262,7 +245,27 @@ let enrichNota = function (html) {
   return notaHtml.html();
 };
 
-let convert = function (filePathIn, filePathOut) {
+let generateImageConversionHandler = function (filegraph) {
+  return function (image) {
+    return image.read().then(function (imageBuffer) {
+      let fileProperties = {
+        uuid: uuid(),
+        type: image.contentType
+      };
+      fileProperties.name = fileProperties.uuid;
+      const fileDownloadPath = `files/${fileProperties.uuid}/download`;
+      persistFile(fileProperties, imageBuffer, config.IMG_PATH, filegraph).then(() => {
+        return {
+          src: fileDownloadPath
+        };
+      });
+    });
+  };
+};
+
+let convert = function (filePathIn, fileGraph) {
+  options.convertImage = mammoth.images.imgElement(generateImageConversionHandler(fileGraph));
+
   return new Promise((resolve, reject) => {
     let conversion = mammoth.convertToHtml({path: filePathIn}, options);
 

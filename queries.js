@@ -1,13 +1,13 @@
 "use strict";
 
+import path from 'path';
+
 import { querySudo as query, updateSudo as update } from '@lblod/mu-auth-sudo';
 import { uuid, sparqlEscapeUri, sparqlEscapeString, sparqlEscapeInt, sparqlEscapeDateTime } from 'mu';
 
-const path = require('path');
+import config from './config';
 
-const config = require('./config');
-
-const createFileDataObject = async function (fileProperties, shareFolderSubPath) {
+const createFileDataObject = async function (fileProperties, shareFolderSubPath, fileGraph = config.MU_APPLICATION_GRAPH) {
   const virtualUuid = fileProperties.uuid || uuid();
   const physicalUuid = fileProperties.physicalUuid || uuid();
   const fileObjectUri = config.FILE_RESOURCES_PATH + virtualUuid; // We assume trailing slash
@@ -24,7 +24,7 @@ const createFileDataObject = async function (fileProperties, shareFolderSubPath)
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     
     INSERT DATA {
-      GRAPH <http://mu.semte.ch/graphs/public> {
+      GRAPH ${sparqlEscapeUri(fileGraph)} {
         ${sparqlEscapeUri(fileObjectUri)} a nfo:FileDataObject;
           mu:uuid ${sparqlEscapeString(virtualUuid)};
           nfo:fileName ${sparqlEscapeString(fileProperties.name)};
@@ -93,9 +93,9 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
     PREFIX dbpedia: <http://dbpedia.org/ontology/>
     PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
     
-    SELECT ?documentVersion ?name ?documentType ?physicalFile ?fileExtension ?g
+    SELECT ?documentVersion ?name ?documentType ?physicalFile ?fileExtension ?fileGraph
     WHERE {
-      GRAPH ?g {
+      GRAPH ?documentGraph {
         ?documentVersion a ext:DocumentVersie;
           mu:uuid ${sparqlEscapeString(documentVersionUuid)};
           ext:file ?file.
@@ -103,7 +103,7 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
           besluitvorming:heeftVersie ?documentVersion;
           ext:documentType ?documentType.
       }
-      GRAPH ?h {
+      GRAPH ?fileGraph {
         ?file dbpedia:fileExtension ?fileExtension;
           nfo:fileName ?name.
         ?physicalFile nie:dataSource ?file.

@@ -27,7 +27,7 @@ const config = require('./config');
    created: "..."
  }
  */
-async function persistFile (fileProperties, buffer, shareFolderSubPath = '') {
+async function persistFile (fileProperties, buffer, shareFolderSubPath = '', fileGraph = config.MU_APPLICATION_GRAPH) {
   return new Promise((resolve, reject) => {
     // const hash = crypto.createHash('md5');
     // hash.update(buffer)
@@ -52,7 +52,7 @@ async function persistFile (fileProperties, buffer, shareFolderSubPath = '') {
         size: size,
         created: created
       };
-      return queries.createFileDataObject(newFileProperties, shareFolderSubPath);
+      return queries.createFileDataObject(newFileProperties, shareFolderSubPath, fileGraph);
     }, (res) => {
       cleanUpFile(physicalPath);
       reject(res);

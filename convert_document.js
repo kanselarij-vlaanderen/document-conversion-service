@@ -42,14 +42,14 @@ let convertDocument = async function (documentVersionUuid) {
       };
       fileProperties.name = documentVersion.name.value || fileProperties.uuid;
       let fileUri = config.FILE_RESOURCES_PATH + fileProperties.uuid;
-      let conversion = convertNota(filePath);
+      let conversion = convertNota(filePath, documentVersion.fileGraph.value);
 
       let fileConversion = conversion.then(function (htmlSnippet) {
         console.log("sucessfully converted document, saving file, ..");
         htmlSnippet = DOC_TEMPLATE.replace('{{type}}', type).replace('{{outlet}}', htmlSnippet);
         htmlSnippet = beautifyHtml(htmlSnippet);
         fileProperties.size = Buffer.byteLength(htmlSnippet, 'utf8');
-        return persistFile(fileProperties, htmlSnippet, config.HTML_PATH);
+        return persistFile(fileProperties, htmlSnippet, config.HTML_PATH, documentVersion.fileGraph.value);
       });
 
       let documentUpdate = fileConversion.then(function () {
