@@ -213,32 +213,35 @@ let enrichNota = function (html) {
     }
 
     // Detect subjects and move into list
-    let subjectsList = cheerio('<ul class="subjects"></ul>');
-    let firstSubject = header.find('h2').filter(function (id, elem) {
-      return cheerio(elem).text().toLowerCase().trim().startsWith('betreft:');
-    }).first();
+    let firstSubject = htmlEnrichers.filterTextElements(header, function (elem) {
+      return elem.parent().text().toLowerCase().trim().startsWith('betreft:');
+    });
     if (firstSubject.length > 0) {
-      console.log('Trimmimg', firstSubject.text().trim().slice('betreft:'.length));
-      let cleanSubject = _.trim(firstSubject.text().trim().slice('betreft:'.length), ' -\t');
-      let subjectLine = cheerio(`<li><span class="subject">${cleanSubject}</span></li>`);
-      subjectsList.append(subjectLine);
-      // console.log('First subject', firstSubject.text());
-      let nextSubjects = firstSubject.nextAll('h2');
-      console.log(`Found ${1 + nextSubjects.length} subjects`);
-      nextSubjects.each(function (i, elem) {
-        cleanSubject = _.trim(cheerio(this).text(), ' -\t');
-        subjectLine = cheerio(`<li><span class="subject">${cleanSubject}</span></li>`);
-        subjectsList.append(subjectLine);
-        cheerio(this).remove();
-        // console.log('Following subjects', $(this).text());
+      // strip 'betreft'
+      firstSubject[0].get()[0].data = _.trim(firstSubject[0].text().trim().slice('betreft:'.length), ' -\t');
+      firstSubject = firstSubject[0].parent().contents().wrapAll('<span class="subject"></span>');
+      let firstParent = header.find('.subject').parentsUntil('header').last();
+      let nextSubjects = firstParent.nextUntil(function (id, elem) {
+        return cheerio(elem).text().toLowerCase().trim().startsWith('bijlage');
       });
-      firstSubject.remove();
+      nextSubjects = nextSubjects.not('br');
+      nextSubjects.each(function (i, elem) {
+        let textElem = htmlEnrichers.filterTextElements(cheerio(this), (txt) => txt !== ''); // Drill down
+        textElem[0].get()[0].data = _.trim(textElem[0].text().trim(), ' -\t');
+        textElem[0].parent().contents().wrapAll('<span class="subject"></span>');
+      });
+      let subjectsList = cheerio('<ul class="subjects"></ul>');
+      header.find('.subject').each(function (i, elem) {
+        let sub = cheerio(this);
+        subjectsList.append(sub);
+        sub.wrap('<li></li>');
+      });
+      subjectsList.insertAfter(header.find('.title')).wrap('<div class="concerns"></div>');
     }
-    subjectsList.insertAfter(header.find('.title')).wrap('<div class="concerns"></div>');
     // let ministerList = cheerio('<ul class="minister-titles"></ul>');
 
     // remove empty elements
-    let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('br').not('div'); // workaround: filter(':empty') doesn't select all empty elements
+    let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('div'); // workaround: filter(':empty') doesn't select all empty elements
     emptyElems.remove();
   }
 
