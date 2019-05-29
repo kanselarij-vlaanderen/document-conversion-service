@@ -254,7 +254,7 @@ let generateImageConversionHandler = function (filegraph) {
       };
       fileProperties.name = fileProperties.uuid;
       const fileDownloadPath = `files/${fileProperties.uuid}/download`;
-      persistFile(fileProperties, imageBuffer, config.IMG_PATH, filegraph).then(() => {
+      return persistFile(fileProperties, imageBuffer, config.IMG_PATH, filegraph).then(() => {
         return {
           src: fileDownloadPath
         };
