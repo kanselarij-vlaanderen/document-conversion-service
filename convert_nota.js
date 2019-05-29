@@ -76,7 +76,8 @@ let enrichNota = function (html) {
   html = regexUtils.applyReplacements(html, replacements);
 
   let notaHtml = cheerio.load(html)('body').first();
-  
+
+  // Wrap all titles known from template in proper header tags
   let mainTitleElems = htmlEnrichers.filterTextElements(notaHtml, function (elem) {
     let notaHeadings = [
       'inhoudelijk',
@@ -91,23 +92,16 @@ let enrichNota = function (html) {
   });
   if (mainTitleElems.length > 0) {
     mainTitleElems.forEach(function (elem) {
-      console.log('Found title:', elem.text());
+      console.log("Found title:", elem.text());
       if (elem.parent().get(0).tagName !== 'h2') {
-        // console.log('Element wasnt h2:', elem.parent().get(0).tagName);
         elem.wrap('<h2></h2>');
       }
       elem = elem.parent();
-      // console.log('Element now is', elem.get(0).tagName);
-      // console.log('Element parent', elem.parent().get(0).tagName);
       elem = htmlEnrichers.unwrapUntil(elem, 'body');
-      // console.log('Unwrapped element is', elem);
     });
   }
-  // 
-  // notaHtml.find('p:empty').replaceWith('<br>');
-  // notaHtml.find('p').each(function(i, elem) {
-  //   console.log('selected text', $(this).text());
-  // });
+
+  // Find first section header (title) and use it as end-boundary for the header
   const firstMainElems = htmlEnrichers.filterTextElements(notaHtml, function (elem) {
     if (elem.text().trim().startsWith('1. ') || elem.text().trim().startsWith('1 ')) {
       return true;
@@ -121,29 +115,25 @@ let enrichNota = function (html) {
   });
   if (firstMainElems.length > 0) {
     let firstMainElem = firstMainElems[0];
+    console.log("Found first section header:", firstMainElem.text());
 
     if (firstMainElem.parent().get(0).tagName !== 'h2') {
-      console.log('Element wasnt h2:', firstMainElem.parent().get(0).tagName);
-      firstMainElem.wrap("<h2></h2>");
+      firstMainElem.wrap('<h2></h2>');
     }
     firstMainElem = firstMainElem.parent().addClass('temp_ref');
     firstMainElem = htmlEnrichers.unwrapUntil(firstMainElem, 'body').first();
     firstMainElem = notaHtml.find('.temp_ref').removeClass('.temp_ref');
     let headerElems = notaHtml.contents().slice(0, firstMainElem.index());
-    if (headerElems.length > 0) {
-      console.log("FOUND HEADER ELEMS");
-      // console.log("header elements", headerElems );
-    }
     headerElems.wrapAll('<header></header>');
 
+    // Wrap section tags around each titled parts of text
     notaHtml.children().not('header').filter('h2').each(function (i, elem) {
+      console.log("Found section header:", cheerio(this).text());
       cheerio(this).nextUntil('h2').addBack().wrapAll('<section></section>');
     });
-    // // Try to find signature in last section
+
+    // Last section stretches over whole footer. Try to separate last section and footer by finding the first signature within the last section
     let signatures = htmlEnrichers.filterTextElements(notaHtml.find('section').last(), function (elem) {
-      // console.log(elem.text())
-      // if (elem.text().toLowerCase().contains('minister')){
-      // }
       return MinisterTitleStarts.some(function (titleStart) {
         return elem.text().toLowerCase().trim().startsWith(titleStart.toLowerCase());
       });
@@ -151,30 +141,30 @@ let enrichNota = function (html) {
     if (signatures.length > 0) {
       signatures.forEach(function (signature) {
         signature.wrap('<span class="minister-title"></span>');
-        console.log("FOUND SIGNATURE", signature.text());
+        console.log("Found signature title:", signature.text());
       });
       let firstSignatureTitle = notaHtml.find('section:last-of-type .minister-title').parentsUntil(notaHtml.find('section:last-of-type').get(0)).last();
-      console.log("First signature title", firstSignatureTitle);
+      console.log("First signature title:", firstSignatureTitle.text());
       let footerElems = firstSignatureTitle.nextAll().addBack();
-      // console.log("FOOTER ELEMS parent", signatures[0].parentsUntil('section'));
-      // console.log("FOOTER ELEMS", footerElems);
       footerElems.wrapAll('<footer></footer>').parent();
       notaHtml.find('footer').insertAfter(notaHtml.find('section').last());
-      // notaHtml.append(footer);
-      // footer.appendTo(notaHtml);
     }
     notaHtml.find('section').wrapAll('<main></main>');
 
-    let header = notaHtml.find('header').first();
+    const header = notaHtml.find('header').first();
+    const main = notaHtml.find('main').first();
+    const footer = notaHtml.find('footer').first();
 
-    // Put image at top of header (get out of table sometimes ...)
-    let headerImg = header.find('img').first().attr('src', 'assets/Logo_Vlaamse_Regering.svg'); // .wrap('<div class=\"vr-logo-wrapper\">').parent();
+    // Put logo at top of header (get out of table sometimes ...) and add new logo
+    let headerImg = header.find('img').first();
     if (headerImg) {
       header.prepend(headerImg);
-      headerImg.wrap('<div class="vr-logo-wrapper"></div>');
+      headerImg.addClass('original-logo');
+      let newLogo = cheerio('<div class="vr-logo-wrapper inserted-logo"><img src="/kaleidos-viewer/assets/Logo_Vlaamse_Regering.svg" alt="Logo Vlaamse Regering"></div>');
+      headerImg.after(newLogo);
     }
 
-    // Put minister titles underneath image
+    // Put minister titles underneath Logo
     let ministerList = cheerio('<ul class="minister-titles"></ul>');
     // Primary method
     let ministerTitelElems = header.find('p').filter(function (id, elem) {
@@ -182,12 +172,12 @@ let enrichNota = function (html) {
     });
     if (ministerTitelElems) {
       ministerTitelElems.each(function (i, elem) {
+        console.log('Found minister title:', cheerio(this).text());
         let ministerLine = cheerio(`<li class="minister-title">${cheerio(this).text()}</li>`);
         ministerList.append(ministerLine);
         cheerio(this).remove();
       });
     }
-    ministerTitelElems = [];
     ministerTitelElems = htmlEnrichers.filterTextElements(header, function (elem) {
       return isMinisterTitel(elem.text());
     });
@@ -200,13 +190,11 @@ let enrichNota = function (html) {
         let ministerLine = cheerio(`<li class="minister-title">${cleanTitle}</li>`);
         ministerList.append(ministerLine);
         elem.remove();
-        console.log('orig: ', elem.text());
-        console.log('minister: ', cleanTitle);
       });
     }
     ministerList.insertAfter(header.find('.vr-logo-wrapper'));
 
-    // Move title after Ministers
+    // Move document title after minister titles
     let title = header.find('h1').first();
     if (title.text().toLowerCase().includes('nota aan')) {
       title.addClass('title').insertAfter(header.find('.minister-titles'));
@@ -219,6 +207,7 @@ let enrichNota = function (html) {
     if (firstSubject.length > 0) {
       // strip 'betreft'
       firstSubject[0].get()[0].data = _.trim(firstSubject[0].text().trim().slice('betreft:'.length), ' -\t');
+      console.log("Found first subject:", firstSubject[0].text());
       firstSubject = firstSubject[0].parent().contents().wrapAll('<span class="subject"></span>');
       let firstParent = header.find('.subject').parentsUntil('header').last();
       let nextSubjects = firstParent.nextUntil(function (id, elem) {
@@ -228,6 +217,7 @@ let enrichNota = function (html) {
       nextSubjects.each(function (i, elem) {
         let textElem = htmlEnrichers.filterTextElements(cheerio(this), (txt) => txt !== ''); // Drill down
         textElem[0].get()[0].data = _.trim(textElem[0].text().trim(), ' -\t');
+        console.log("Found subject:", textElem[0].text());
         textElem[0].parent().contents().wrapAll('<span class="subject"></span>');
       });
       let subjectsList = cheerio('<ul class="subjects"></ul>');
