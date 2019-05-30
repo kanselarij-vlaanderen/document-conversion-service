@@ -103,15 +103,19 @@ let enrichNota = function (html) {
 
   // Find first section header (title) and use it as end-boundary for the header
   const firstMainElems = htmlEnrichers.filterTextElements(notaHtml, function (elem) {
-    if (elem.text().trim().startsWith('1. ') || elem.text().trim().startsWith('1 ')) {
-      return true;
-    }
-    return [
+    let knownFirstTitle = [
       'inhoudelijk',
       'inleiding',
       'toelichting',
       'situering',
-      'historiek'].includes(elem.text().trim().toLowerCase());
+      'historiek'].includes(_.trim(elem.text().toLowerCase(), '1234567890. \t'));
+    if (knownFirstTitle) {
+      return true;
+    } else if (elem.text().trim().startsWith('1. ')) {
+      return true;
+    } else {
+      return false;
+    }
   });
   if (firstMainElems.length > 0) {
     let firstMainElem = firstMainElems[0];
