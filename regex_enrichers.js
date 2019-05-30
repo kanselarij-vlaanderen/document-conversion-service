@@ -166,10 +166,7 @@ let flemishMinisterTitles = function (input) {
     let source = match['input'];
     let matchString = groups[0];
 
-    let replace;
-    for (const group of groups) {
-      replace = replace.concat(`<span class="minister-title">${group}</span>`);
-    }
+    let replace = `<span class="minister-title">${matchString}</span>`;
     outputs.push({
       'index': index,
       'source': matchString,

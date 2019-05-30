@@ -165,34 +165,24 @@ let enrichNota = function (html) {
     }
 
     // Put minister titles underneath Logo
-    let ministerList = cheerio('<ul class="minister-titles"></ul>');
-    // Primary method
-    let ministerTitelElems = header.find('p').filter(function (id, elem) {
-      return isMinisterTitel(cheerio(elem).text());
-    });
-    if (ministerTitelElems) {
-      ministerTitelElems.each(function (i, elem) {
-        console.log('Found minister title:', cheerio(this).text());
-        let ministerLine = cheerio(`<li class="minister-title">${cheerio(this).text()}</li>`);
-        ministerList.append(ministerLine);
-        cheerio(this).remove();
-      });
-    }
-    ministerTitelElems = htmlEnrichers.filterTextElements(header, function (elem) {
+    let ministerTitelElems = htmlEnrichers.filterTextElements(header, function (elem) {
       return isMinisterTitel(elem.text());
     });
-    // Fallback/supplementary method
-    if (ministerTitelElems) {
+    if (ministerTitelElems.length > 0) {
       console.log('Found minister titles', ministerTitelElems.length);
       ministerTitelElems.forEach(function (elem) {
-        let cleanTitle = elem.text().replace(/(^((En)|[ ])+)|(((en)|[, ])+$)/gi, '');
-        cleanTitle[0] = cleanTitle[0].toUpperCase();
-        let ministerLine = cheerio(`<li class="minister-title">${cleanTitle}</li>`);
-        ministerList.append(ministerLine);
-        elem.remove();
+        let replacements = regexEnrichers.flemishMinisterTitles(elem.text());
+        console.log(replacements);
+        let newTitles = cheerio(regexUtils.applyReplacements(elem.text(), replacements));
+        elem.replaceWith(newTitles);
       });
+      let ministerTitles = header.find('.minister-title');
+      ministerTitles.parent().remove();
+      let ministerList = cheerio('<ul class="minister-titles"></ul>');
+      ministerList.append(ministerTitles);
+      ministerTitles.wrap('<li></li>');
+      ministerList.insertAfter(header.find('.vr-logo-wrapper'));
     }
-    ministerList.insertAfter(header.find('.vr-logo-wrapper'));
 
     // Move document title after minister titles
     let title = header.find('h1').first();
