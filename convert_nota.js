@@ -228,9 +228,33 @@ let enrichNota = function (html) {
       });
       subjectsList.insertAfter(header.find('.title')).wrap('<div class="concerns"></div>');
     }
-    // let ministerList = cheerio('<ul class="minister-titles"></ul>');
 
-    // remove empty elements
+    // Detect minister names and move into list
+    let ministerNames = htmlEnrichers.filterTextElements(footer, function (elem) {
+      return elem.parent().text().match(/[A-Z]{3,}/g);
+    });
+    if (ministerNames.length > 0) {
+      ministerNames.forEach(function (elem) {
+        elem.parent().contents().wrapAll('<span class="minister-name"></span>');
+      });
+    }
+
+    // Group minister titles and names into signatures
+    let ministerTitles = footer.find('.minister-title');
+    ministerNames = footer.find('.minister-name');
+    if (ministerTitles.length > 0 && (ministerTitles.length === ministerNames.length)) {
+      let ministerList = cheerio('<ul class="minister-signatures"></ul>');
+      ministerTitles.each(function (i, elem) {
+        let ministerSignature = cheerio('<span class="minister-signature"></span>');
+        ministerSignature.append(cheerio(elem));
+        ministerSignature.append(ministerNames[i]);
+        ministerList.append(ministerSignature);
+        ministerSignature.wrap('<li></li>');
+      });
+      footer.prepend(ministerList);
+    }
+
+    // remove empty elements from header
     let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('div'); // workaround: filter(':empty') doesn't select all empty elements
     emptyElems.remove();
   }
