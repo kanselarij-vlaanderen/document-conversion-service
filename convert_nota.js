@@ -19,7 +19,10 @@ const persistFile = require('./persist_file');
 const MinisterTitleStarts = [
   "De Vlaamse minister van",
   "De minister-president van de Vlaamse Regering",
-  "De viceminister-president van de Vlaamse Regering"
+  "De viceminister-president van de Vlaamse Regering",
+  "Vlaams minister van",
+  "Minister-president van de Vlaamse Regering",
+  "Viceminister-president van de Vlaamse Regering"
 ];
 
 var isMinisterTitel = function (text) {
