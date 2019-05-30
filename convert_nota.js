@@ -122,7 +122,7 @@ let enrichNota = function (html) {
     }
     firstMainElem = firstMainElem.parent().addClass('temp_ref');
     firstMainElem = htmlEnrichers.unwrapUntil(firstMainElem, 'body').first();
-    firstMainElem = notaHtml.find('.temp_ref').removeClass('.temp_ref');
+    firstMainElem = notaHtml.find('.temp_ref').removeClass('temp_ref');
     let headerElems = notaHtml.contents().slice(0, firstMainElem.index());
     headerElems.wrapAll('<header></header>');
 
