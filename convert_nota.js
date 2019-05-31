@@ -204,35 +204,51 @@ let enrichNota = function (html) {
       title.addClass('title').insertAfter(header.find('.minister-titles'));
     }
 
-    // Detect subjects and move into list
-    let firstSubject = htmlEnrichers.filterTextElements(header, function (elem) {
-      return elem.parent().text().toLowerCase().trim().startsWith('betreft:');
+    // Detect attachments
+    let attachments = header.contents().filter(function (id, elem) {
+      return cheerio(elem).text().toLowerCase().trim().startsWith('bijlage');
     });
-    if (firstSubject.length > 0) {
-      // strip 'betreft'
-      firstSubject[0].get()[0].data = _.trim(firstSubject[0].text().trim().slice('betreft:'.length), ' -\t');
-      console.log("Found first subject:", firstSubject[0].text());
-      firstSubject = firstSubject[0].parent().contents().wrapAll('<span class="subject"></span>');
-      let firstParent = header.find('.subject').parentsUntil('header').last();
-      let nextSubjects = firstParent.nextUntil(function (id, elem) {
-        return cheerio(elem).text().toLowerCase().trim().startsWith('bijlage');
-      });
-      nextSubjects = nextSubjects.not('br');
-      nextSubjects.each(function (i, elem) {
-        let textElem = htmlEnrichers.filterTextElements(cheerio(this), (txt) => txt !== ''); // Drill down
-        textElem[0].get()[0].data = _.trim(textElem[0].text().trim(), ' -\t');
-        console.log("Found subject:", textElem[0].text());
-        textElem[0].parent().contents().wrapAll('<span class="subject"></span>');
-      });
-      let subjectsList = cheerio('<ul class="subjects"></ul>');
-      header.find('.subject').each(function (i, elem) {
-        let sub = cheerio(this);
-        subjectsList.append(sub);
-        sub.wrap('<li></li>');
-      });
-      subjectsList.insertAfter(header.find('.title')).wrap('<div class="concerns"></div>');
+    if (attachments.length > 0) {
+      console.log('Found attachments', attachments.first());
+      attachments.first().nextAll().addBack().wrapAll('<div class="attachments"></div>');
     }
-    // let ministerList = cheerio('<ul class="minister-titles"></ul>');
+
+    // Detect subjects and move into list
+    let foundFirstSubject = false;
+    let subjects = header.contents().filter('h2, p').filter(function (id, elem) {
+      let txt = cheerio(elem).text().toLowerCase().trim();
+      if (txt.startsWith('betreft')) {
+        foundFirstSubject = true;
+        return true;
+      } else {
+        return foundFirstSubject ? txt.startsWith('-') : false;
+      }
+    });
+    if (subjects.length > 0) {
+      // strip 'betreft' and '-'
+      let txtNode = htmlEnrichers.filterTextElements(subjects.first(), (txt) => txt !== '')[0];
+      txtNode.get(0).data = _.trim(txtNode.get(0).data.trim().slice('betreft'.length), ' :-\t');
+      let subjectsList = cheerio(`<ul class="subjects"></ul>`);
+      subjects.each(function (i, elem) {
+        let subject = cheerio(elem);
+        console.log("Found subject:", subject.text());
+        txtNode = htmlEnrichers.filterTextElements(subject, (txt) => txt !== '')[0];
+        txtNode.get(0).data = _.trim(txtNode.get(0).data, ' -\t');
+        let listElem = cheerio('<span class="subject"></span>').append(subject.contents()).wrap('<li></li>').parent();
+        subjectsList.append(listElem);
+      });
+      subjects.first().replaceWith(subjectsList);
+      subjectsList.wrap('<div class="concerns"></div>');
+    }
+
+    // Add lingering elements to subjects
+    header.find('.concerns').nextUntil('.attachments').not('br, :empty').each(function (i, elem) {
+      let subject = cheerio(elem);
+      if (subject.text().trim() !== '') {
+        let listElem = cheerio('<span class="subject"></span>').append(subject.contents()).wrap('<li></li>').parent();
+        header.find('.concerns .subjects').append(listElem);
+      }
+    });
 
     // remove empty elements
     let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('div'); // workaround: filter(':empty') doesn't select all empty elements
