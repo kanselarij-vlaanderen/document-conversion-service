@@ -7,6 +7,8 @@ import { uuid, sparqlEscapeUri, sparqlEscapeString, sparqlEscapeInt, sparqlEscap
 
 import config from './config';
 
+const NOTA_URI = 'http://kanselarij.vo.data.gift/id/concept/document-type-codes/9e5b1230-f3ad-438f-9c68-9d7b1b2d875d';
+
 const createFileDataObject = async function (fileProperties, shareFolderSubPath, fileGraph = config.MU_APPLICATION_GRAPH) {
   const virtualUuid = fileProperties.uuid || uuid();
   const physicalUuid = fileProperties.physicalUuid || uuid();
@@ -114,6 +116,37 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
 };
 
 /**
+ * retrieve all documentversions that arent converted yet
+ * @method fetchUnconvertedDocumentVersions
+ * @return {Array}
+ */
+const fetchUnconvertedDocumentVersions = async function () {
+  let q = `
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+    PREFIX dbpedia: <http://dbpedia.org/ontology/>
+    PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+    
+    SELECT ?documentVersion ?documentVersionUuid
+    WHERE {
+      GRAPH ?documentGraph {
+        ?documentVersion a ext:DocumentVersie;
+          mu:uuid ?documentVersionUuid.
+        ?document a foaf:Document;
+          besluitvorming:heeftVersie ?documentVersion;
+          ext:documentType ?documentType.
+        FILTER NOT EXISTS { ?documentVersion ext:convertedFile ?convertedFile. }
+      }
+      FILTER ( ?documentType IN (${sparqlEscapeUri(NOTA_URI)}) )
+    }
+  `;
+  return query(q);
+};
+
+/**
  * upsert the converted file associated to a document version.
  * @method upsertConvertedFile
  * @param {URI} documentVersionUri
@@ -157,5 +190,6 @@ module.exports = {
   createFileDataObject,
   removeFileDataObject,
   fetchDocumentVersion,
+  fetchUnconvertedDocumentVersions,
   upsertConvertedFile
 };
