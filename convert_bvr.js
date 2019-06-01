@@ -122,9 +122,30 @@ let enrichBVR = function (html) {
 
   let rechtsgrondPreamble = $.find('.rechtsgrond-preamble');
   if (rechtsgrondPreamble.length > 0) {
-    console.log(rechtsgrondPreamble.first().nextAll());
     rechtsgrondPreamble.first().nextUntil('footer').addBack().wrapAll('<main></main>');
     $.contents().first().nextUntil('main').addBack().wrapAll('<header></header>');
+  }
+
+  let main = $.find('main');
+  if (main.length > 0) {
+    let titles = main.contents().filter(function (id, elem) {
+      return cheerio(elem).text().trim().startsWith('Titel');
+    });
+    titles.addClass('temp-marker');
+    titles.each(function (i, elem) {
+      let title = cheerio(this);
+      console.log('Found title:', title.text());
+      if ((i + 1) < titles.length) {
+        title.nextUntil('.temp-marker').addBack().wrapAll('<section class="title"></section>').end();
+      } else {
+        title.nextAll().addBack().wrapAll('<section class="title"></section>').end();
+      }
+    });
+    $.find('main .temp-marker').each(function (i, elem) {
+      let title = cheerio(this);
+      let newTitle = cheerio('<h2></h2>').append(title.contents());
+      title.replaceWith(newTitle);
+    });
   }
 
   return $.html();
