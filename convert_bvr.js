@@ -77,7 +77,8 @@ let enrichBVR = function (html) {
     let newLogo = cheerio('<div class="vr-logo-wrapper inserted-logo"><img src="/kaleidos-viewer/assets/Logo_Vlaamse_Regering.svg" alt="Logo Vlaamse Regering"></div>');
     headerImg.after(newLogo);
   }
-  
+
+  // Find title
   let title = $.find('b').filter(function (id, elem) {
     return cheerio(elem).text().toLowerCase().trim().startsWith('Besluit van de Vlaamse Regering'.toLowerCase());
   });
@@ -86,7 +87,46 @@ let enrichBVR = function (html) {
     title = title.first();
     title.parent().replaceWith(cheerio('<h1></h1>').append(title.contents()));
   }
-  
+
+  // Find rechtsgrond preamble
+  let preamble = $.find('p').filter(function (id, elem) {
+    return cheerio(elem).text().trim() === 'DE VLAAMSE REGERING,';
+  });
+  if (preamble.length > 0) {
+    console.log("Found rechtsgrond preamble 'DE VLAAMSE REGERING,'");
+    preamble = preamble.first();
+    preamble.replaceWith(cheerio('<span class="rechtsgrond-preamble">DE VLAAMSE REGERING,</span>'));
+  }
+
+  // Find besluit preamble
+  preamble = $.find('p').filter(function (id, elem) {
+    return cheerio(elem).text().trim() === 'BESLUIT:';
+  });
+  if (preamble.length > 0) {
+    console.log("Found besluit preamble 'BESLUIT:'");
+    preamble = preamble.first();
+    preamble.replaceWith(cheerio('<span class="besluit-preamble">BESLUIT:</span>'));
+  }
+
+  // Find footer preamble
+  let firstFooterElem = $.contents().filter(function (id, elem) {
+    return cheerio(elem).text().trim().startsWith('Brussel,');
+  });
+  if (firstFooterElem.length > 0) {
+    console.log("Found footer");
+    firstFooterElem = firstFooterElem.last();
+    firstFooterElem.nextAll().addBack().wrapAll('<footer></footer>');
+  }
+
+  $ = cheerio.load($.html())('body').first(); // HACK: Somehow previous ops break the internal DOM representation, reset
+
+  let rechtsgrondPreamble = $.find('.rechtsgrond-preamble');
+  if (rechtsgrondPreamble.length > 0) {
+    console.log(rechtsgrondPreamble.first().nextAll());
+    rechtsgrondPreamble.first().nextUntil('footer').addBack().wrapAll('<main></main>');
+    $.contents().first().nextUntil('main').addBack().wrapAll('<header></header>');
+  }
+
   return $.html();
 };
 
