@@ -135,16 +135,29 @@ let enrichBVR = function (html) {
     titles.each(function (i, elem) {
       let title = cheerio(this);
       console.log('Found title:', title.text());
-      if ((i + 1) < titles.length) {
-        title.nextUntil('.temp-marker').addBack().wrapAll('<section class="title"></section>').end();
-      } else {
-        title.nextAll().addBack().wrapAll('<section class="title"></section>').end();
-      }
+      let content = (i + 1) < titles.length ? title.nextUntil('.temp-marker') : title.nextAll();
+      content.addBack().wrapAll('<section class="title"></section>').end();
     });
     $.find('main .temp-marker').each(function (i, elem) {
       let title = cheerio(this);
       let newTitle = cheerio('<h2></h2>').append(title.contents());
       title.replaceWith(newTitle);
+    });
+    
+    let chapters = main.find('p').filter(function (id, elem) {
+      return cheerio(elem).text().trim().startsWith('Hoofdstuk');
+    });
+    chapters.addClass('temp-marker');
+    chapters.each(function (i, elem) {
+      let chapter = cheerio(this);
+      console.log('Found Chapter:', chapter.text());
+      let content = (i + 1) < chapters.length ? chapter.nextUntil('.temp-marker') : chapter.nextAll();
+      content.addBack().wrapAll('<section class="chapter"></section>').end();
+    });
+    $.find('main .temp-marker').each(function (i, elem) {
+      let chapter = cheerio(this);
+      let newChapter = cheerio('<h3></h3>').append(chapter.contents());
+      chapter.replaceWith(newChapter);
     });
   }
 
