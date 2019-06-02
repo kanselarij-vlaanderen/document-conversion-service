@@ -19,7 +19,10 @@ const persistFile = require('./persist_file');
 const MinisterTitleStarts = [
   "De Vlaamse minister van",
   "De minister-president van de Vlaamse Regering",
-  "De viceminister-president van de Vlaamse Regering"
+  "De viceminister-president van de Vlaamse Regering",
+  "Vlaams minister van",
+  "Minister-president van de Vlaamse Regering",
+  "Viceminister-president van de Vlaamse Regering"
 ];
 
 var isMinisterTitel = function (text) {
@@ -169,34 +172,24 @@ let enrichNota = function (html) {
     }
 
     // Put minister titles underneath Logo
-    let ministerList = cheerio('<ul class="minister-titles"></ul>');
-    // Primary method
-    let ministerTitelElems = header.find('p').filter(function (id, elem) {
-      return isMinisterTitel(cheerio(elem).text());
-    });
-    if (ministerTitelElems) {
-      ministerTitelElems.each(function (i, elem) {
-        console.log('Found minister title:', cheerio(this).text());
-        let ministerLine = cheerio(`<li class="minister-title">${cheerio(this).text()}</li>`);
-        ministerList.append(ministerLine);
-        cheerio(this).remove();
-      });
-    }
-    ministerTitelElems = htmlEnrichers.filterTextElements(header, function (elem) {
+    let ministerTitelElems = htmlEnrichers.filterTextElements(header, function (elem) {
       return isMinisterTitel(elem.text());
     });
-    // Fallback/supplementary method
-    if (ministerTitelElems) {
+    if (ministerTitelElems.length > 0) {
       console.log('Found minister titles', ministerTitelElems.length);
       ministerTitelElems.forEach(function (elem) {
-        let cleanTitle = elem.text().replace(/(^((En)|[ ])+)|(((en)|[, ])+$)/gi, '');
-        cleanTitle[0] = cleanTitle[0].toUpperCase();
-        let ministerLine = cheerio(`<li class="minister-title">${cleanTitle}</li>`);
-        ministerList.append(ministerLine);
-        elem.remove();
+        let replacements = regexEnrichers.flemishMinisterTitles(elem.text());
+        console.log(replacements);
+        let newTitles = cheerio(regexUtils.applyReplacements(elem.text(), replacements));
+        elem.replaceWith(newTitles);
       });
+      let ministerTitles = header.find('.minister-title');
+      ministerTitles.parent().remove();
+      let ministerList = cheerio('<ul class="minister-titles"></ul>');
+      ministerList.append(ministerTitles);
+      ministerTitles.wrap('<li></li>');
+      ministerList.insertAfter(header.find('.vr-logo-wrapper'));
     }
-    ministerList.insertAfter(header.find('.vr-logo-wrapper'));
 
     // Move document title after minister titles
     let title = header.find('h1').first();
@@ -250,7 +243,32 @@ let enrichNota = function (html) {
       }
     });
 
-    // remove empty elements
+    // Detect minister names and move into list
+    let ministerNames = htmlEnrichers.filterTextElements(footer, function (elem) {
+      return elem.parent().text().match(/[A-Z]{3,}/g);
+    });
+    if (ministerNames.length > 0) {
+      ministerNames.forEach(function (elem) {
+        elem.parent().contents().wrapAll('<span class="minister-name"></span>');
+      });
+    }
+
+    // Group minister titles and names into signatures
+    let ministerTitles = footer.find('.minister-title');
+    ministerNames = footer.find('.minister-name');
+    if (ministerTitles.length > 0 && (ministerTitles.length === ministerNames.length)) {
+      let ministerList = cheerio('<ul class="minister-signatures"></ul>');
+      ministerTitles.each(function (i, elem) {
+        let ministerSignature = cheerio('<span class="minister-signature"></span>');
+        ministerSignature.append(cheerio(elem));
+        ministerSignature.append(ministerNames[i]);
+        ministerList.append(ministerSignature);
+        ministerSignature.wrap('<li></li>');
+      });
+      footer.prepend(ministerList);
+    }
+
+    // remove empty elements from header
     let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('div'); // workaround: filter(':empty') doesn't select all empty elements
     emptyElems.remove();
   }
