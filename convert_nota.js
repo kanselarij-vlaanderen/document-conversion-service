@@ -197,7 +197,7 @@ let enrichNota = function (html) {
       title.addClass('title').insertAfter(header.find('.minister-titles'));
     }
 
-    // Detect attachments
+    // Detect attachments in header
     let attachments = header.contents().filter(function (id, elem) {
       return cheerio(elem).text().toLowerCase().trim().startsWith('bijlage');
     });
@@ -243,13 +243,44 @@ let enrichNota = function (html) {
       }
     });
 
+    // remove empty elements from header
+    let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('div'); // workaround: filter(':empty') doesn't select all empty elements
+    emptyElems.remove();
+
+    // Detect attachments in footer
+    attachments = footer.contents().filter(function (id, elem) {
+      return cheerio(elem).text().toLowerCase().trim().startsWith('bijlage');
+    });
+    if (attachments.length > 0) {
+      console.log('Found attachments', attachments.first());
+      attachments.first().nextAll().addBack().wrapAll('<div class="attachments"></div>');
+    }
+
+    // Detect dangling minister name in last main section
+    let ministerName = main.find('section').last().contents().not('h2').filter(function (id, elem) {
+      return cheerio(elem).text().match(/[A-Z]{3,}(\s+)?,?(\s+)?$/g);
+    });
+    if (ministerName.length > 0) {
+      ministerName.last().prependTo(footer);
+    }
     // Detect minister names and move into list
-    let ministerNames = htmlEnrichers.filterTextElements(footer, function (elem) {
-      return elem.parent().text().match(/[A-Z]{3,}/g);
+    let ministerNames = footer.contents().filter(function (id, elem) {
+      return cheerio(elem).text().match(/[A-Z]{3,}(\s+)?,?(\s+)?$/g);
     });
     if (ministerNames.length > 0) {
-      ministerNames.forEach(function (elem) {
-        elem.parent().contents().wrapAll('<span class="minister-name"></span>');
+      ministerNames.each(function (i, elem) {
+        let foundFirst = false;
+        let ministerNamesText = htmlEnrichers.filterTextElements(cheerio(elem), function (elem) {
+          if (!foundFirst) {
+            foundFirst = true;
+            return true;
+          } else {
+            return false;
+          }
+        });
+        ministerNamesText.forEach(function (elem) {
+          elem.parent().contents().wrapAll('<span class="minister-name"></span>');
+        });
       });
     }
 
@@ -267,10 +298,6 @@ let enrichNota = function (html) {
       });
       footer.prepend(ministerList);
     }
-
-    // remove empty elements from header
-    let emptyElems = header.contents().filter((idx, elem) => cheerio(elem).text().trim() === '').not('img').not('div'); // workaround: filter(':empty') doesn't select all empty elements
-    emptyElems.remove();
   }
 
   return notaHtml.html();
