@@ -2,6 +2,7 @@
 Microservice to convert `docx` documents from the Flemish Chancery to semantically structured html fragements.
 The service only supports specific types of documents, which are based on on official templates:
 - [Nota](https://github.com/kanselarij-vlaanderen/kaleidos-data/blob/1e3074bc0392d50377c6bc9e9d5ea06f15cbe3c5/document-types.ttl#L6): "Nota aan de Vlaamse Regering" (template source [here](https://overheid.vlaanderen.be/regelgeving/wetgevingstechniek/voorbeeld-modellen-nota/mededeling/verslag-aan-de-regering))
+- [BVR](https://github.com/kanselarij-vlaanderen/kaleidos-data/blob/4a889483ac12f40ba12fa4611de41beb429744d1/document-types.ttl#L55): "Besluit van de Vlaamse Regering" (template source [here](https://overheid.vlaanderen.be/1-opmaak-ontwerp-dossier))
 
 
 

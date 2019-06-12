@@ -8,6 +8,9 @@ const FILE_RESOURCES_PATH = 'http://kanselarij.vo.data.gift/id/files/';
 const SHARE_FOLDER_PATH = '/share';
 const FILE_SHARE_SUBFOLDER = 'html_conversions';
 
+const NOTA_URI = 'http://kanselarij.vo.data.gift/id/concept/document-type-codes/9e5b1230-f3ad-438f-9c68-9d7b1b2d875d';
+const BVR_URI = 'https://data.vlaanderen.be/id/concept/AardWetgeving/BesluitVanDeVlaamseRegering';
+
 // PRIVATE
 
 const IMG_PATH = path.join(FILE_SHARE_SUBFOLDER, 'img');
@@ -33,5 +36,7 @@ module.exports = {
   FILE_RESOURCES_PATH,
   SHARE_FOLDER_PATH,
   IMG_PATH,
-  HTML_PATH
+  HTML_PATH,
+  NOTA_URI,
+  BVR_URI
 };

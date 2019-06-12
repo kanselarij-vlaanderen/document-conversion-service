@@ -7,8 +7,6 @@ import { uuid, sparqlEscapeUri, sparqlEscapeString, sparqlEscapeInt, sparqlEscap
 
 import config from './config';
 
-const NOTA_URI = 'http://kanselarij.vo.data.gift/id/concept/document-type-codes/9e5b1230-f3ad-438f-9c68-9d7b1b2d875d';
-
 const createFileDataObject = async function (fileProperties, shareFolderSubPath, fileGraph = config.MU_APPLICATION_GRAPH) {
   const virtualUuid = fileProperties.uuid || uuid();
   const physicalUuid = fileProperties.physicalUuid || uuid();
@@ -140,7 +138,7 @@ const fetchUnconvertedDocumentVersions = async function () {
           ext:documentType ?documentType.
         FILTER NOT EXISTS { ?documentVersion ext:convertedFile ?convertedFile. }
       }
-      FILTER ( ?documentType IN (${sparqlEscapeUri(NOTA_URI)}) )
+      FILTER ( ?documentType IN (${sparqlEscapeUri(config.NOTA_URI)}, ${sparqlEscapeUri(config.BVR_URI)}) )
     }
   `;
   return query(q);

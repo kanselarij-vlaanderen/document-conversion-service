@@ -14,11 +14,7 @@ const persistFile = require('./persist_file');
 const beautifyHtml = require('js-beautify').html;
 const fsp = fs.promises;
 
-const NOTA_URI = 'http://kanselarij.vo.data.gift/id/concept/document-type-codes/9e5b1230-f3ad-438f-9c68-9d7b1b2d875d';
-const BVR_URI = 'http://kanselarij.vo.data.gift/id/concept/document-type-codes/4c7cfaf9-1d5f-4fdf-b7e9-b7ce5167e31a';
-
 const DOC_TEMPLATE = fs.readFileSync(path.join(__dirname, './document_output_template.hbs'), 'utf8');
-
 
 let convertDocument = async function (documentVersionUuid) {
   console.log(`converting document with uuid ${documentVersionUuid}`);
@@ -36,13 +32,13 @@ let convertDocument = async function (documentVersionUuid) {
     let sharePath = documentVersion.physicalFile.value.replace('share://', '');
     let filePath = path.join(config.SHARE_FOLDER_PATH, sharePath);
 
-    if ([NOTA_URI, BVR_URI].includes(documentVersion.documentType.value)) {
+    if ([config.NOTA_URI, config.BVR_URI].includes(documentVersion.documentType.value)) {
       let type = '';
       let conversion;
-      if (documentVersion.documentType.value === NOTA_URI) {
+      if (documentVersion.documentType.value === config.NOTA_URI) {
         type = 'nota';
         conversion = convertNota(filePath, documentVersion.fileGraph.value);
-      } else if (documentVersion.documentType.value === BVR_URI) {
+      } else if (documentVersion.documentType.value === config.BVR_URI) {
         type = 'bvr';
         conversion = convertBVR(filePath, documentVersion.fileGraph.value);
       }
