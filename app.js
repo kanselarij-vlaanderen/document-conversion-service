@@ -32,3 +32,5 @@ app.get('/convert-document-versions/', async function (req, res, next) {
     return res.status(200).send({status: 200, title: 'No documents to convert'});
   }
 });
+
+app.use(errorHandler);

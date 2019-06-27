@@ -24,7 +24,6 @@ let convertDocument = async function (documentVersionUuid) {
       return reject(new Error(`No document version found by uuid '${documentVersionUuid}', abort ...`));
     } else {
       documentVersion = documentVersion.results.bindings[0];
-      console.log("documentVersion object", documentVersion);
     }
     if (!(documentVersion.fileExtension.value === 'docx')) {
       return reject(new Error(`File has extension '${documentVersion.fileExtension.value}' instead of 'docx', abort ...`));
@@ -64,7 +63,7 @@ let convertDocument = async function (documentVersionUuid) {
 
       return resolve(documentUpdate);
     } else {
-      return reject(new Error(`Currently only documents of type '${NOTA_URI}' are supported. Got '${documentVersion.documentType.value}' instead. abort ...`));
+      return reject(new Error(`Currently only documents of type '${config.NOTA_URI}' and type '${config.BVR_URI}' are supported. Got '${documentVersion.documentType.value}' instead. abort ...`));
     }
   });
 };
