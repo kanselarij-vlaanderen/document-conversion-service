@@ -20,7 +20,7 @@ document-conversion:
 
 ## REST API
 
-#### GET /convert-document-version/:id
+#### GET /convert-document-versions/:id
 Convert the related file from a document version with given id to a semantically structered html fragment. The converted fragment is attached to the `document-version`-resource by means of the `ext:convertedFile`-predicate.
 
 ##### Response
@@ -30,3 +30,5 @@ Returned when the document conversion succeeded.
 ###### 404 Bad Request
 Returned when the document conversion failed, most likely due to the document type not being suited for conversion.
 
+#### GET /convert-document-versions/
+Convert the related file for each (supported) document version that has no converted file yet.
