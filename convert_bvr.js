@@ -132,7 +132,7 @@ let enrichBVR = function (html) {
   });
   if (firstFooterElem.length > 0) {
     console.log("Found footer");
-    firstFooterElem = firstFooterElem.last();
+    firstFooterElem = firstFooterElem.last().addClass('place');
     firstFooterElem.nextAll().addBack().wrapAll('<footer></footer>');
   }
 
@@ -194,6 +194,56 @@ let enrichBVR = function (html) {
     $.find('br').remove();
   }
 
+  let footer = $.find('footer');
+  if (footer.length > 0) {
+    let signatures = htmlEnrichers.filterTextElements(footer, function (elem) {
+      return MinisterTitleStarts.some(function (titleStart) {
+        return elem.text().toLowerCase().trim().startsWith(titleStart.toLowerCase());
+      });
+    });
+    if (signatures.length > 0) {
+      signatures.forEach(function (signature) {
+        signature.wrap('<span class="minister-title"></span>');
+        console.log('Found signature title:', signature.text());
+      });
+    }
+
+    // Detect minister names and move into list
+    let ministerNames = footer.contents().filter(function (id, elem) {
+      return cheerio(elem).text().match(/[A-Z]{3,}(\s+)?,?(\s+)?$/g);
+    });
+    if (ministerNames.length > 0) {
+      ministerNames.each(function (i, elem) {
+        let foundFirst = false;
+        let ministerNamesText = htmlEnrichers.filterTextElements(cheerio(elem), function (elem) {
+          if (!foundFirst) {
+            foundFirst = true;
+            return true;
+          } else {
+            return false;
+          }
+        });
+        ministerNamesText.forEach(function (elem) {
+          elem.parent().contents().wrapAll('<span class="minister-name"></span>');
+        });
+      });
+    }
+
+    // Group minister titles and names into signatures
+    let ministerTitles = footer.find('.minister-title');
+    ministerNames = footer.find('.minister-name');
+    if (ministerTitles.length > 0 && (ministerTitles.length === ministerNames.length)) {
+      let ministerList = cheerio('<ul class="minister-signatures"></ul>');
+      ministerTitles.each(function (i, elem) {
+        let ministerSignature = cheerio('<span class="minister-signature"></span>');
+        ministerSignature.append(cheerio(elem));
+        ministerSignature.append(ministerNames[i]);
+        ministerList.append(ministerSignature);
+        ministerSignature.wrap('<li></li>');
+      });
+      footer.find('.place').after(ministerList);
+    }
+  }
   return $.html();
 };
 
