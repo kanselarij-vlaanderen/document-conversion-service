@@ -46,6 +46,24 @@ var options = {
   // includeDefaultStyleMap: false,
 };
 
+let wrapParts = function(rootElem, titleHint, wrapper) {
+  let parts = rootElem.contents().filter(function (id, elem) {
+    return cheerio(elem).text().trim().startsWith(titleHint);
+  });
+  parts.addClass('temp-marker');
+  parts.each(function (i, elem) {
+    let part = cheerio(this);
+    console.log('Found part:', part.text());
+    let content = (i + 1) < parts.length ? part.nextUntil('.temp-marker') : part.nextAll();
+    content.addBack().wrapAll(wrapper).end();
+  });
+  rootElem.find('.temp-marker').each(function (i, elem) {
+    let title = cheerio(this);
+    let newTitle = cheerio('<h2></h2>').append(title.contents());
+    title.replaceWith(newTitle);
+  });
+};
+
 let enrichBVR = function (html) {
   html = html.split('<p></p>').join('<br>');
   html = html.split('<b></b>').join('<br>');
@@ -128,37 +146,52 @@ let enrichBVR = function (html) {
 
   let main = $.find('main');
   if (main.length > 0) {
-    let titles = main.contents().filter(function (id, elem) {
-      return cheerio(elem).text().trim().startsWith('Titel');
+    wrapParts(main, 'Titel', '<section class="title"></section>');
+    wrapParts(main.find('.title'), 'Hoofdstuk', '<section class="chapter"></section>');
+    wrapParts(main.find('.title .chapter'), 'Afdeling', '<section class="division"></section>');
+    wrapParts(main.find('.chapter .division'), 'Onderafdeling', '<section class="subdivision"></section>');
+
+    let articleNumbers = main.find('p > b').filter(function (id, elem) {
+      return cheerio(elem).text().trim().startsWith('Art');
     });
-    titles.addClass('temp-marker');
-    titles.each(function (i, elem) {
-      let title = cheerio(this);
-      console.log('Found title:', title.text());
-      let content = (i + 1) < titles.length ? title.nextUntil('.temp-marker') : title.nextAll();
-      content.addBack().wrapAll('<section class="title"></section>').end();
+    articleNumbers.addClass('article-number');
+    articleNumbers.each(function (i, elem) {
+      let part = cheerio(this);
+      part.parent().before(part);
     });
-    $.find('main .temp-marker').each(function (i, elem) {
-      let title = cheerio(this);
-      let newTitle = cheerio('<h2></h2>').append(title.contents());
-      title.replaceWith(newTitle);
+    articleNumbers = main.find('.article-number');
+    articleNumbers.each(function (i, elem) {
+      let articleNumber = cheerio(this);
+      console.log('Found article:', articleNumber.text());
+      let content = articleNumber.nextUntil('.article-number, section');
+      content.addBack().wrapAll('<article></article>').end();
     });
-    
-    let chapters = main.find('p').filter(function (id, elem) {
-      return cheerio(elem).text().trim().startsWith('Hoofdstuk');
+
+    let paragraphStarts = main.find('article > p').filter(function (id, elem) {
+      return cheerio(elem).text().trim().startsWith('§');
     });
-    chapters.addClass('temp-marker');
-    chapters.each(function (i, elem) {
-      let chapter = cheerio(this);
-      console.log('Found Chapter:', chapter.text());
-      let content = (i + 1) < chapters.length ? chapter.nextUntil('.temp-marker') : chapter.nextAll();
-      content.addBack().wrapAll('<section class="chapter"></section>').end();
+    paragraphStarts.addClass('temp-marker');
+    paragraphStarts.each(function (i, elem) {
+      let paragraphStart = cheerio(this);
+      console.log('Found paragraph:', paragraphStart.text());
+      let content = paragraphStart.nextUntil('.temp-marker');
+      content.addBack().wrapAll('<section class="paragraph"></section>').end();
     });
-    $.find('main .temp-marker').each(function (i, elem) {
-      let chapter = cheerio(this);
-      let newChapter = cheerio('<h3></h3>').append(chapter.contents());
-      chapter.replaceWith(newChapter);
+    main.find('.temp-marker').removeClass('temp-marker');
+
+    let enumerations = main.find('p + ol');
+    enumerations.addClass('enumeration');
+    let nestedEnums = main.find('.enumeration ol');
+    nestedEnums.addClass('enumeration');
+    enumerations = main.find('p + ol');
+    enumerations.each(function (i, elem) {
+      let enumeration = cheerio(this);
+      enumeration.prev().addBack().wrapAll('<section class="clause"></section>');
     });
+    main.find('article > p').addClass('clause');
+    main.find('.paragraph > p').addClass('clause');
+
+    $.find('br').remove();
   }
 
   return $.html();
