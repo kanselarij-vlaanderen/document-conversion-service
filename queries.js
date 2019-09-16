@@ -99,9 +99,9 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
         ?documentVersion a ext:DocumentVersie;
           mu:uuid ${sparqlEscapeString(documentVersionUuid)};
           ext:file ?file.
-        OPTIONAL {?document a foaf:Document;
+        ?document a foaf:Document;
           besluitvorming:heeftVersie ?documentVersion;
-          ext:documentType ?documentType. }
+          ext:documentType ?documentType.
       }
       GRAPH ?fileGraph {
         ?file dbpedia:fileExtension ?fileExtension;
