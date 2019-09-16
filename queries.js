@@ -101,7 +101,7 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
           ext:file ?file.
         ?document a foaf:Document;
           besluitvorming:heeftVersie ?documentVersion;
-          ext:documentType ?documentType.
+          OPTIONAL { ext:documentType ?documentType. }
       }
       GRAPH ?fileGraph {
         ?file dbpedia:fileExtension ?fileExtension;
