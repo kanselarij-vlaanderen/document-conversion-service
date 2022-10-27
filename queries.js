@@ -92,6 +92,7 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
     PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
     PREFIX dbpedia: <http://dbpedia.org/ontology/>
     PREFIX besluitvorming: <http://data.vlaanderen.be/ns/besluitvorming#>
+    PREFIX dct: <http://purl.org/dc/terms/>
     
     SELECT ?documentVersion ?name ?documentType ?physicalFile ?fileExtension ?fileGraph
     WHERE {
@@ -101,7 +102,7 @@ const fetchDocumentVersion = async function (documentVersionUuid) {
           ext:file ?file.
         ?document a foaf:Document;
           besluitvorming:heeftVersie ?documentVersion;
-          ext:documentType ?documentType.
+          dct:type ?documentType.
       }
       GRAPH ?fileGraph {
         ?file dbpedia:fileExtension ?fileExtension;
